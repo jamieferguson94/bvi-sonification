@@ -46,7 +46,7 @@ var AudSampleRate;    // Sample rate (probably 44100 sam/sec but could be change
 var AudAmplify;       // The amount to amplify the spectral values
 var AudAmpScale;      // Power to scale the amps by (>1.0 to exaggerate peaks a bit more)
 var AudMinFreq, AudMaxFreq; // Lower and upper frequencies to map to
-
+var GainNode;
 
 
     // ======== Functions to setup and link-in canvases and contexts, initialise variables etc
@@ -72,13 +72,16 @@ function linkCanvases() {
 function initAudio() {
 
       // Default values for the parameters
-  AudBuffSiz = 256;
+  AudBuffSiz = 4096;
   AudAmplify = 0.2;
-  AudAmpScale = 1.0; // 1.3 is good to emphasise "peakiness", 0.5 good to "smooth" the sounds out a bit
-  AudMinFreq = 50.0;  // In Hz
-  AudMaxFreq = 1000.0;
+  AudAmpScale = 0.8; // 1.3 is good to emphasise "peakiness", 0.5 good to "smooth" the sounds out a bit
+  AudMinFreq = 30.0;  // In Hz
+  AudMaxFreq = 900.0;
 
   AudioCtx = new AudioContext();
+  GainNode = AudioCtx.createGain();
+  //GainNode.connect(AudioCtx.destination);
+  //GainNode.gain.value = 1;
   AudSampleRate = AudioCtx.sampleRate;
   AudioBuffer = AudioCtx.createBuffer(1, AudBuffSiz, AudSampleRate);
 
@@ -370,12 +373,23 @@ function playAudio(evt) {
     // -------- Stop playing audio
 function stopAudio(evt) {
   previousPosition = false;
-  console.log(evt);
+  // console.log(evt);
   // console.log("++STOP: ("+evt.clientX+", "+evt.clientY+")");
 
   PlayingSpec = -1;
   if (AudioSource) {
-    AudioSource.stop(0);
+    //AudioSource.stop(0);
+    GainNode.gain.value = 0;
+    AudioSource = AudioCtx.createBufferSource();
+    var tmpBuffer = AudioBuffer.getChannelData(0);
+    for(i=0; i<AudBuffSiz; i++) {
+      tmpBuffer[i] = 0.0;
+    }
+
+    //AudioSource.buffer = AudioBuffer;
+    AudioSource.connect(AudioCtx.destination);
+    AudioSource.loop = true;
+    AudioSource.start(0);
   }
 
   clearSpecImage();
@@ -427,10 +441,19 @@ function spec2audio(speci) {
   for(i=0; i<AudBuffSiz; i++) {
     tmpBuffer[i] = fftdata.real[i];
   }
+  var rampSize = 2048;
+  for(i=0; i<rampSize; i++) {
+    tmpBuffer[i] *= i / rampSize;
+    tmpBuffer[tmpBuffer.length - i - 1] *= i / rampSize; 
+  }
 
   AudioSource.buffer = AudioBuffer;
   AudioSource.connect(AudioCtx.destination);
   AudioSource.loop = true;
+  AudioSource.connect(GainNode);
+  // Connect the gain node to the destination.
+  GainNode.connect(AudioCtx.destination);
+  GainNode.gain.value = 1;
 
 
 } // spec2audio()

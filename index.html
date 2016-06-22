@@ -107,9 +107,10 @@ new FITS("data/cube3_stck.fits", function() {
           var index = ((y * ymag + v) * (dx * xmag) + (x * xmag + u)) * 4;
           var color = {r: 0, g: 0, b: 0};
           for (var z = 0; z < dz; ++z) color[channel(z)] += DataCube[z*dx*dy + y*dx + x];
-          data[index]   = scale.r(color.r);
+          // flipped colors!!! [hack!]
+          data[index]   = scale.r(color.b);
           data[++index] = scale.g(color.g);
-          data[++index] = scale.b(color.b);
+          data[++index] = scale.b(color.r);
           data[++index] = 255;
         }};
       }};
