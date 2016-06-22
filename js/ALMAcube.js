@@ -322,16 +322,36 @@ function getRGBIdx(x, y) {
 
     // ======== Functions to create the audio
 
+var previousPosition = false;
+function checkAudio() {
+  var indexFinger = $("#dip_0_1");
+  var x = parseInt(indexFinger.offset().left - $(window).scrollLeft());
+  var y = parseInt(indexFinger.offset().top - $(window).scrollTop());
+  var rect = ImageCnv.getBoundingClientRect();
+  if (x >= rect.left && x<= rect.right && y<=rect.bottom && y>=rect.top){
+    evt = {clientX: x, clientY: y}
+    if (!previousPosition){
+      playAudio(evt);
+      previousPosition = true;
+    } else {
+      changeAudio(evt);
+    }
+  } else {
+    stopAudio('out of bounds');
+  }
+}
+
     // -------- Start ing audio
 function playAudio(evt) {
 
-  console.log("++PLAY: ("+evt.clientX+", "+evt.clientY+")");
+  //console.log("++PLAY: ("+evt.clientX+", "+evt.clientY+")");
 
        // Map from mouse to spectral data position
   var mcoo = {}, dcoo = {};
   mcoo.x = evt.clientX;
   mcoo.y = evt.clientY;
   dcoo = mouse2data(mcoo);
+  //console.log(dcoo);
   var speci = getDataIdx(dcoo.x, dcoo.y, 0);
 
       // Calculate the appropriate sound and store it in the audiobuffer
@@ -349,11 +369,14 @@ function playAudio(evt) {
 
     // -------- Stop playing audio
 function stopAudio(evt) {
-
-  console.log("++STOP: ("+evt.clientX+", "+evt.clientY+")");
+  previousPosition = false;
+  console.log(evt);
+  // console.log("++STOP: ("+evt.clientX+", "+evt.clientY+")");
 
   PlayingSpec = -1;
-  AudioSource.stop(0);
+  if (AudioSource) {
+    AudioSource.stop(0);
+  }
 
   clearSpecImage();
 
@@ -371,7 +394,7 @@ function changeAudio(evt) {
 
     // Only change if this is a new sound
   if((speci != PlayingSpec) || (PlayingSpec < 0)) {  
-    console.log("++CHANGE: ("+evt.clientX+", "+evt.clientY+")");
+    // console.log("++CHANGE: ("+evt.clientX+", "+evt.clientY+")");
     stopAudio(evt);
     playAudio(evt);
   }
