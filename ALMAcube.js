@@ -76,13 +76,16 @@ function linkCanvases() {
 function initAudio() {
 
       // Default values for the parameters
-  AudBuffSiz = 256;
+  AudBuffSiz = 4096 * 10;
   AudAmplify = 0.2;
   AudAmpScale = 0.5; // 1.3 is good to emphasise "peakiness", 0.5 good to "smooth" the sounds out a bit
   AudMinFreq = 50.0;  // In Hz
   AudMaxFreq = 900.0;
 
   AudioCtx = new AudioContext();
+  gainNode = AudioCtx.createGain();
+  gainNode.connect(AudioCtx.destination)
+  gainNode.gain.value = 0.1
   AudSampleRate = AudioCtx.sampleRate;
   AudioBuffer = AudioCtx.createBuffer(1, AudBuffSiz, AudSampleRate);
 
@@ -338,7 +341,7 @@ function playAudio(evt) {
   dcoo = mouse2data(mcoo);
   var speci = getDataIdx(dcoo.x, dcoo.y, 0);
 
-      // Calculate the appropriate sound and store it in the audiobuffer
+  // Calculate the appropriate sound and store it in the audiobuffer
   AudioSource = AudioCtx.createBufferSource();
   spec2audio(speci);
   PlayingSpec = speci;
@@ -357,6 +360,7 @@ function stopAudio(evt) {
   console.log("++STOP: ("+evt.clientX+", "+evt.clientY+")");
 
   PlayingSpec = -1;
+
   AudioSource.stop(0);
 
   clearSpecImage();
@@ -376,7 +380,9 @@ function changeAudio(evt) {
     // Only change if this is a new sound
   if((speci != PlayingSpec) || (PlayingSpec < 0)) {  
     console.log("++CHANGE: ("+evt.clientX+", "+evt.clientY+")");
+
     stopAudio(evt);
+
     playAudio(evt);
   }
 
@@ -419,11 +425,13 @@ function spec2audio(speci) {
   compressor.release.value = 0.25;
 
   AudioSource.buffer = AudioBuffer;
-  AudioSource.connect(compressor)
+  AudioSource.connect(compressor);
+
   compressor.connect(AudioCtx.destination)
   AudioSource.connect(AudioCtx.destination);
 
   AudioSource.loop = true;
+
 
 
 } // spec2audio()
