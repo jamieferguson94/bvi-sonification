@@ -409,8 +409,20 @@ function spec2audio(speci) {
     tmpBuffer[i] = fftdata.real[i];
   }
 
+  // Create a compressor node
+  var compressor = AudioCtx.createDynamicsCompressor();
+  compressor.threshold.value = -50;
+  compressor.knee.value = 40;
+  compressor.ratio.value = 12;
+  compressor.reduction.value = -20;
+  compressor.attack.value = -0.5;
+  compressor.release.value = 0.25;
+
   AudioSource.buffer = AudioBuffer;
+  AudioSource.connect(compressor)
+  compressor.connect(AudioCtx.destination)
   AudioSource.connect(AudioCtx.destination);
+
   AudioSource.loop = true;
 
 
