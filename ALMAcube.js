@@ -78,9 +78,9 @@ function initAudio() {
       // Default values for the parameters
   AudBuffSiz = 256;
   AudAmplify = 0.2;
-  AudAmpScale = 1.0; // 1.3 is good to emphasise "peakiness", 0.5 good to "smooth" the sounds out a bit
+  AudAmpScale = 0.5; // 1.3 is good to emphasise "peakiness", 0.5 good to "smooth" the sounds out a bit
   AudMinFreq = 50.0;  // In Hz
-  AudMaxFreq = 1000.0;
+  AudMaxFreq = 900.0;
 
   AudioCtx = new AudioContext();
   AudSampleRate = AudioCtx.sampleRate;
