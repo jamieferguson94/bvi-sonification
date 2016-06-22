@@ -52,7 +52,6 @@ var AudMinFreq, AudMaxFreq; // Lower and upper frequencies to map to
     // ======== Functions to setup and link-in canvases and contexts, initialise variables etc
 
 function linkCanvases() {
-
   ImageCnv = document.getElementById('ImageCanvas');
   ImageCtx = ImageCanvas.getContext('2d');
   ICwidth = ImageCtx.canvas.width;
@@ -66,9 +65,6 @@ function linkCanvases() {
   SpecCtx = SpecCanvas.getContext('2d');
   SCwidth = SpecCtx.canvas.width;
   SCheight = SpecCtx.canvas.height;
-
-  ParamCnv = document.getElementById('ParamCanvas');
-  ParamCtx = ParamCanvas.getContext('2d');
 
 }
 
@@ -92,7 +88,6 @@ function initAudio() {
 
     // -------- Setup "Listener" functions for mouse activity etc
 function createListeners() {
-
   ImageCnv.addEventListener('mousedown', function(evt) {
         if(DataReady) {
           ClickStatus = true;
@@ -314,7 +309,8 @@ function readData(evt) {
 }
 
 function getDataIdx(x, y, s) {
-  var i = s + (x*DataDepth) + (y*DataDepth*DataWidth);
+  //var i = s + (x*DataDepth) + (y*DataDepth*DataWidth);
+  var i = x + (y*DataWidth) + (s*DataWidth*DataHeight);
   return(i);
 }
 
@@ -326,7 +322,7 @@ function getRGBIdx(x, y) {
 
     // ======== Functions to create the audio
 
-    // -------- Start playing audio
+    // -------- Start ing audio
 function playAudio(evt) {
 
   console.log("++PLAY: ("+evt.clientX+", "+evt.clientY+")");
@@ -399,7 +395,7 @@ function spec2audio(speci) {
   for(i=0; i<DataDepth; i++) {
     var f = datafreq2audiofreq(i);
     var fi = audiofreq2fftindex(f);
-    fftdata.real[fi] = fftdata.real[fi] + (AudAmplify * Math.pow(DataCube[speci + i], AudAmpScale));
+    fftdata.real[fi] = fftdata.real[fi] + (AudAmplify * Math.pow(DataCube[speci + (i * DataWidth * DataHeight)], AudAmpScale));
   }
 
   fftdata.InvFFT();
@@ -456,7 +452,7 @@ function makeSpecImage(speci) {
     x2 = Math.ceil((i+1)*binwid);
     if(x2 > SCwidth) {x2 = SCwidth;}
 
-    y = DataCube[speci + i] * yscal;
+    y = DataCube[speci + (i * DataHeight * DataWidth)] * yscal;
     if(y > SCheight) {y = SCheight;}
 
         // Get the colour...
@@ -480,5 +476,3 @@ function clearSpecImage() {
    SpecCtx.fillStyle = "white";
    SpecCtx.fillRect(0,0,SCwidth,SCheight);
 }
-
-

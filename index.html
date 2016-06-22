@@ -6,6 +6,9 @@
   <script src="js/fft.js"></script>
   <script src="js/ALMAcube.js"></script>
   <script src="js/fits.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/d3.min.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+  <script type="text/javascript" src="https://js.leapmotion.com/leap-0.6.2.min.js"></script>
   <title>ALMA_inpCube</title>
   <link rel="stylesheet" href="css/soni.css" type="text/css"> 
 </head>
@@ -26,7 +29,7 @@
 <div class="form_sec">
   <div class="form_input">
      <div class='canvas'>
-         <canvas id="ImageCanvas" width="10" height="10"'></canvas>
+         <canvas id="ImageCanvas" width="10" height="10"></canvas>
      </div>
      </div>
      <div class="form_info">
@@ -41,7 +44,7 @@
 <div class="form_sec">
   <div class="form_input">
      <div class='canvas'>
-       <canvas id="SpecCanvas" width="500" height="200"'></canvas>
+       <canvas id="SpecCanvas" width="500" height="200"></canvas>
      </div>
      </div>
      <div class="form_info">
@@ -55,38 +58,69 @@
 <script language="javascript">
 var FITS = astro.FITS;
 
+new FITS("data/cube.fits", function() {
 
-// Define a callback function for when the FITS file is received
-var callback = function() {
+  var hdu = this.getHDU();
+  var fits = hdu.data;
+  DataCube = fits._getFrame(fits.buffer, fits.bitpix, fits.bzero, fits.bscale);
+  DataReady = true;
 
-    // Get the first header-dataunit containing a dataunit
-    var hdu = this.getHDU();
-    var header = hdu.header;
-    var fits = hdu.data;
+  var dx = fits.width, dy = fits.height, dz = fits.depth;
+  DataWidth = dx;
+  DataHeight = dy;
+  DataDepth = dz;
+  var xmag = 3, ymag = xmag;
+  
+  var tmpCopy = DataCube.slice();
+  tmpCopy.sort();
+  DataMin = tmpCopy[0];
+  DataMax = tmpCopy[tmpCopy.length - 1];
 
-    var values = fits._getFrame(fits.buffer,fits.bitpix,fits.bzero,fits.bscale);
-
-    // Read cards from the header
-    var bitpix = header.get('BITPIX');
-    var naxis1 = header.get('NAXIS1');
-    var naxis2 = header.get('NAXIS2');
-    var naxis3 = header.get('NAXIS3');
-
-    console.log(naxis1,naxis2,naxis3);
-    console.log(typeof naxis1);
-    //resize canvas to match fits image
-    document.getElementById('ImageCanvas').width = naxis1;
-    document.getElementById('ImageCanvas').height = naxis2;
-
+  var width = xmag * dx, height = ymag * dy;
     
-}
-new FITS("data/cube1_stck.fits", callback);
+  var canvas = d3.select("#ImageCanvas")
+    //.append("canvas")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("class", "canvas");
 
-</script>
-<script language="javascript">
-linkCanvases();
-initAudio();
-createListeners();
+  var ctx = canvas.node().getContext("2d");
+
+  var scale = {
+    r: d3.scale.linear().domain([0, 2e3]).range([0, 255]),
+    g: d3.scale.linear().domain([0, 2e3]).range([0, 255]),
+    b: d3.scale.linear().domain([0, 2e3]).range([0, 255])
+  };
+
+  var channel = d3.scale.threshold().domain([20, 40]).range(["b", "g", "r"]);
+
+  function redraw() {
+
+    var imageData = ctx.getImageData(0, 0, xmag * dx, ymag * dy);
+    var data = imageData.data;
+    
+      for (var y = 0; y < dy; ++y) {
+      for (var v = 0; v < ymag; ++v) {
+        for (var x = 0; x < dx; ++x) {
+        for (var u = 0; u < xmag; ++u) {
+          var index = ((y * ymag + v) * (dx * xmag) + (x * xmag + u)) * 4;
+          var color = {r: 0, g: 0, b: 0};
+          for (var z = 0; z < dz; ++z) color[channel(z)] += DataCube[z*dx*dy + y*dx + x];
+          data[index]   = scale.r(color.r);
+          data[++index] = scale.g(color.g);
+          data[++index] = scale.b(color.b);
+          data[++index] = 255;
+        }};
+      }};
+
+    ctx.putImageData(imageData, 0, 0);
+    linkCanvases();
+    initAudio();
+    createListeners();
+  };
+
+  redraw();
+})
 </script>
 
 </body>
