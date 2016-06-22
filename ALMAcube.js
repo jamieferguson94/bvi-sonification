@@ -92,7 +92,7 @@ function initAudio() {
 
     // -------- Setup "Listener" functions for mouse activity etc
 function createListeners() {
-
+/*
   ImageCnv.addEventListener('mousedown', function(evt) {
         if(DataReady) {
           ClickStatus = true;
@@ -111,7 +111,7 @@ function createListeners() {
             changeAudio(evt);
           }
         }
-      }, false);
+      }, false);*/
 }
 
     // ======== Functions to map various coordinates
@@ -327,14 +327,27 @@ function getRGBIdx(x, y) {
     // ======== Functions to create the audio
 
     // -------- Start playing audio
-function playAudio(evt) {
+var previousPosition = false;
+function checkAudio() {
+  if (!previousPosition){
+    playAudio();
+    previousPosition = true;
+  } else {
+    changeAudio();
+  }
+}
 
-  console.log("++PLAY: ("+evt.clientX+", "+evt.clientY+")");
+function playAudio() {
+
+  // console.log("++PLAY: ("+evt.clientX+", "+evt.clientY+")");
+  var indexFinger = $("#dip_0_1");
+  var x = parseInt(indexFinger.offset().left);
+  var y = parseInt(indexFinger.offset().top);
 
        // Map from mouse to spectral data position
   var mcoo = {}, dcoo = {};
-  mcoo.x = evt.clientX;
-  mcoo.y = evt.clientY;
+  mcoo.x = x;
+  mcoo.y = y;
   dcoo = mouse2data(mcoo);
   var speci = getDataIdx(dcoo.x, dcoo.y, 0);
 
@@ -352,32 +365,38 @@ function playAudio(evt) {
 }
 
     // -------- Stop playing audio
-function stopAudio(evt) {
-
-  console.log("++STOP: ("+evt.clientX+", "+evt.clientY+")");
+function stopAudio() {
+  previousPosition = false;
+  // console.log("++STOP: ("+evt.clientX+", "+evt.clientY+")");
 
   PlayingSpec = -1;
-  AudioSource.stop(0);
+  if (AudioSource) {
+    AudioSource.stop(0);
+  }
 
   clearSpecImage();
 
 }
 
     // -------- Change the tone
-function changeAudio(evt) {
+function changeAudio() {
 
        // Map from mouse to spectral data position
+  var indexFinger = $("#dip_0_1");
+  var x = parseInt(indexFinger.offset().left);
+  var y = parseInt(indexFinger.offset().top)
+
   var mcoo = {}, dcoo = {};
-  mcoo.x = evt.clientX;
-  mcoo.y = evt.clientY;
+  mcoo.x = x;
+  mcoo.y = y;
   dcoo = mouse2data(mcoo);
   var speci = getDataIdx(dcoo.x, dcoo.y, 0);
 
     // Only change if this is a new sound
   if((speci != PlayingSpec) || (PlayingSpec < 0)) {  
-    console.log("++CHANGE: ("+evt.clientX+", "+evt.clientY+")");
-    stopAudio(evt);
-    playAudio(evt);
+    // console.log("++CHANGE: ("+evt.clientX+", "+evt.clientY+")");
+    stopAudio();
+    playAudio();
   }
 
 }
@@ -480,5 +499,3 @@ function clearSpecImage() {
    SpecCtx.fillStyle = "white";
    SpecCtx.fillRect(0,0,SCwidth,SCheight);
 }
-
-

@@ -50,14 +50,17 @@ function main_leap(){
           showHand(h);
           updateHandPosition(h, leap_hand);
           updateHandLabelText(h, leap_hand);
+          checkAudio();
         }
         else
         {
           hideHand(h);
+          stopAudio();
         }
       }
       else {
         hideHand(h);
+        stopAudio();
       }
     }
   }
@@ -105,10 +108,10 @@ function main_leap(){
       var dipPosition = normalizeVector(leap_hand.fingers[f].dipPosition).multiplyScalar(normalToScreen);
       var labelPosition = dipPosition;
 
-      $("#mcp_"+h+"_"+f).offset({ "left": mcpPosition.x, "top": mcpPosition.z });
-      $("#pip_"+h+"_"+f).offset({ "left": pipPosition.x, "top": pipPosition.z });
-      $("#dip_"+h+"_"+f).offset({ "left": dipPosition.x, "top": dipPosition.z });
-      $("#label_"+h+"_"+f).offset({ "left": labelPosition.x + LABEL_OFFSET.x, "top": labelPosition.z + LABEL_OFFSET.y });
+      $("#mcp_"+h+"_"+f).offset({ "left": mcpPosition.x, "top": -mcpPosition.y });
+      $("#pip_"+h+"_"+f).offset({ "left": pipPosition.x, "top": -pipPosition.y });
+      $("#dip_"+h+"_"+f).offset({ "left": dipPosition.x, "top": -dipPosition.y });
+      $("#label_"+h+"_"+f).offset({ "left": labelPosition.x + LABEL_OFFSET.x, "top": -labelPosition.y + LABEL_OFFSET.y });
 
       $("#mcp_"+h+"_"+f).css('position', 'absolute');
       $("#pip_"+h+"_"+f).css('position', 'absolute');
