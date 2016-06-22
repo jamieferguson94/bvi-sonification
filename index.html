@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <script src="js/complex_array.js"></script>
+  <script src="js/fft.js"></script>
+  <script src="js/ALMAcube.js"></script>
+  <script src="js/fits.js" type="text/javascript" charset="utf-8"></script>
+  <title>ALMA_inpCube</title>
+  <link rel="stylesheet" href="css/soni.css" type="text/css"> 
+</head>
+<body>
+
+<div class="header">
+        <img align="center" src="css/bannerImg.png" alt="SonicSpectrafier">
+	<p align="right">HACKDAY</p>
+</div>
+
+
+<!-- IMAGE AREA -->
+
+
+<div class="form_head">
+  <strong> IMAGE AREA </strong>
+</div>
+<div class="form_sec">
+  <div class="form_input">
+     <div class='canvas'>
+         <canvas id="ImageCanvas" width="10" height="10"'></canvas>
+     </div>
+     </div>
+     <div class="form_info">
+	  Your input image
+     </div>
+     <div class="clear"></div>
+</div>
+<!-- SPEC AREA -->
+<div class="form_head">
+  <strong> SPECTRUM AREA </strong>
+</div>
+<div class="form_sec">
+  <div class="form_input">
+     <div class='canvas'>
+       <canvas id="SpecCanvas" width="500" height="200"'></canvas>
+     </div>
+     </div>
+     <div class="form_info">
+	  The spectrum canvas
+     </div>
+<div class="clear"></div>  
+</div>
+  
+
+
+<script language="javascript">
+var FITS = astro.FITS;
+
+
+// Define a callback function for when the FITS file is received
+var callback = function() {
+
+    // Get the first header-dataunit containing a dataunit
+    var hdu = this.getHDU();
+    var header = hdu.header;
+    var fits = hdu.data;
+
+    var values = fits._getFrame(fits.buffer,fits.bitpix,fits.bzero,fits.bscale);
+
+    // Read cards from the header
+    var bitpix = header.get('BITPIX');
+    var naxis1 = header.get('NAXIS1');
+    var naxis2 = header.get('NAXIS2');
+    var naxis3 = header.get('NAXIS3');
+
+    console.log(naxis1,naxis2,naxis3);
+    console.log(typeof naxis1);
+    //resize canvas to match fits image
+    document.getElementById('ImageCanvas').width = naxis1;
+    document.getElementById('ImageCanvas').height = naxis2;
+
+    
+}
+new FITS("data/cube1_stck.fits", callback);
+
+</script>
+<script language="javascript">
+linkCanvases();
+initAudio();
+createListeners();
+</script>
+
+</body>
+</html>
