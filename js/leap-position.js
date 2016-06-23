@@ -55,12 +55,12 @@ function main_leap(){
         else
         {
           hideHand(h);
-          stopAudio();
+          //stopAudio();
         }
       }
       else {
         hideHand(h);
-        stopAudio();
+        //stopAudio();
       }
     }
   }
