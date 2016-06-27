@@ -73,7 +73,7 @@ function initAudio() {
 
       // Default values for the parameters
   AudBuffSiz = 4096;
-  AudAmplify = 0.02;
+  AudAmplify = 0.002;
   AudAmpScale = 0.8; // 1.3 is good to emphasise "peakiness", 0.5 good to "smooth" the sounds out a bit
   AudMinFreq = 30.0;  // In Hz
   AudMaxFreq = 900.0;
@@ -443,8 +443,8 @@ function spec2audio(speci) {
   }
   var rampSize = 2048;
   for(i=0; i<rampSize; i++) {
-    tmpBuffer[i] *= i / rampSize;
-    tmpBuffer[tmpBuffer.length - i - 1] *= i / rampSize; 
+    tmpBuffer[i] *= (i / rampSize);
+    tmpBuffer[tmpBuffer.length - i - 1] *= (i / rampSize);
   }
 
   AudioSource.buffer = AudioBuffer;
