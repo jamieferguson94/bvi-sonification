@@ -1,27 +1,19 @@
 {
-  "name": "electron-quick-start",
-  "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "name": "bvi-sonification",
+  "version": "0.1.0",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/electron/electron-quick-start.git"
+    "url": "git+https://github.com/jamieferguson94/bvi-sonification.git"
   },
-  "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial"
-  ],
-  "author": "GitHub",
-  "license": "CC0-1.0",
+  "author": "Coleman Krawczyk",
+  "license": "Apache 2.0",
   "bugs": {
-    "url": "https://github.com/electron/electron-quick-start/issues"
+    "url": "https://github.com/jamieferguson94/bvi-sonification/issues"
   },
-  "homepage": "https://github.com/electron/electron-quick-start#readme",
   "devDependencies": {
     "electron-prebuilt": "^1.2.0"
   },
