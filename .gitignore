@@ -1,1 +1,4 @@
-*fits
+node_modules
+*.log
+*.fits
+*.DS_Store
