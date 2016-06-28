@@ -1,72 +1,32 @@
 body {
-        background: #bfd3e6;
-        margin: 0px;
-        padding: 48px 64px;
-        font-family: "Helvetica Neue", Helvetica, sans-serif;
-        font-size: 1em;
-        line-height: 1.4;
+  background: #bfd3e6;
+  margin: 0;
+  padding: 30px 30px;
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 1em;
+  line-height: 1.4;
 }
-
-.page_left {
-	background: #bfd3e6;
-	padding: 2px 2px 2px 2px;
-	color: #4f6b72;
-	margin-left: auto;
-  	margin-right: auto;
-	margin-top: auto;
-	max-width: 300px;
-	float:left;
-}
-
-.page_right {
-	background: #bfd3e6;
-	padding: 2px 2px 2px 2px;
-	color: #4f6b72;
-	margin-left: auto;
-  	margin-right: auto;
-	margin-top: auto;
-	max-width: 300px
-	float:right;
-}
-
 
 .canvas {
 	background: #111111;
 	color: #4f6b72;
 	margin-left: auto;
-  	margin-right: auto;
+	margin-right: auto;
 	margin-top: auto;
-	float:left;
-
-}
-
-
-.form_head {
-	border-right: 1px solid #C1DAD7;
-	border-bottom: 1px solid #C1DAD7;
-	background: #8c96c6;
-	padding: 6px 6px 6px 6px;
-	color: #ffffff;
-	max-width: 970px;
-	width:100%;
-	margin-left: auto;
-  	margin-right: auto;
-	margin-top: 10px;
-	font-weight:500;
+	float: left;
 }
 
 .form_sec {
 	border-right: 1px solid #C1DAD7;
 	border-bottom: 1px solid #C1DAD7;
 	background: #fff;
-	padding: 6px 6px 6px 6px; 
+	padding: 6px; 
 	color: #4f6b72;
 	margin-left: auto;
   margin-right: auto;
 	margin-top: 2px;
-	line-height:225%;
-	max-width: 970px;
-	width:100%;
+	line-height: 225%;
+	width: 100%;
 }
 
 .form_input {
@@ -74,39 +34,26 @@ body {
 	padding: 1px 1px 1px 10px;
 	color: #4f6b72;
 	margin-left: auto;
-  	margin-right: auto;
+	margin-right: auto;
 	margin-top: auto;
 	max-width: 435px;
-	width:50%;
-	float:left;
-	line-height:225%;
+	width: 50%;
+	float: left;
+	line-height: 225%;
 }
 
-.form_info {
-	background: #edf8fb;
-	padding: 1px 1px 1px 10px;
-	color: #4f6b72;
-	margin-left: auto;
-  	margin-right: auto;
-	margin-top: auto;
-	margin-bottom: 2px;
-	max-width: 435px;
-	width:50%;
-	float:right;
-	border: 1px solid #C1DAD7;
-	line-height:200%;
+.clear {
+  clear: both;
 }
-
-.clear { clear: both;}
 
 .header{
 	border-right: 1px solid #C1DAD7;
-        border-bottom: 1px solid #C1DAD7;
-        background: #ffffff;
-        padding: 6px 6px 6px 12px;
-        color: #4f6b72;
-	width: 970px;
+  border-bottom: 1px solid #C1DAD7;
+  background: #ffffff;
+  padding: 6px;
+  color: #4f6b72;
+	width: 100%;
 	margin-left: auto;
-  	margin-right: auto;
-	font-weight:bold;
+	margin-right: auto;
+	font-weight: bold;
 }
