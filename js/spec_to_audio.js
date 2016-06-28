@@ -20,24 +20,7 @@ function spec2audio(speci) {
   }
   /* eslint new-cap: 0 */
   fftdata.InvFFT();
-
-  const tmpBuffer = window.AudioBuffer.getChannelData(0);
-  for (let i = 0; i < window.AudBuffSiz; i++) {
-    tmpBuffer[i] = fftdata.real[i];
-  }
-  const rampSize = 2048;
-  for (let i = 0; i < rampSize; i++) {
-    tmpBuffer[i] *= (i / rampSize);
-    tmpBuffer[tmpBuffer.length - i - 1] *= (i / rampSize);
-  }
-
-  window.AudioSource.buffer = window.AudioBuffer;
-  window.AudioSource.connect(window.AudioCtx.destination);
-  window.AudioSource.loop = true;
-  window.AudioSource.connect(GainNode);
-  // Connect the gain node to the destination.
-  window.GainNode.connect(window.AudioCtx.destination);
-  window.GainNode.gain.value = 1;
+  return fftdata.real;
 }
 
 module.exports = spec2audio;

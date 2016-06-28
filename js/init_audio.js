@@ -1,6 +1,6 @@
 function initAudio() {
   window.AudBuffSiz = 4096;
-  window.AudAmplify = 0.002;
+  window.AudAmplify = 0.02;
   window.AudAmpScale = 0.8; // 1.3 is good to emphasise "peakiness", 0.5 good to "smooth" the sounds out a bit
   window.AudMinFreq = 30.0;  // In Hz
   window.AudMaxFreq = 900.0;
