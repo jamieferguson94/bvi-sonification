@@ -33,6 +33,7 @@ function changeAudio(evt) {
   const speci = getDataIdx(dcoo.x, dcoo.y, 0);
   if ((speci !== window.PlayingSpec) || (window.PlayingSpec < 0)) {
     stopAudio(evt);
+    window.ActiveBuffer = !window.ActiveBuffer;
     playAudio(evt);
   }
 }

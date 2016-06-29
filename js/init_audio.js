@@ -5,13 +5,15 @@ function initAudio() {
   window.AudMinFreq = 30.0;  // In Hz
   window.AudMaxFreq = 900.0;
   window.FadeTime = 0.3; // crossfade time in seconds
+  window.FadeSteps = 100; // number of steps to take durring crossfade
 
   window.AudioCtx = new AudioContext();
   window.AudSampleRate = window.AudioCtx.sampleRate;
-  window.AudioBuffer = window.AudioCtx.createBuffer(1, window.AudBuffSiz, window.AudSampleRate);
+  window.AudioBuffer = window.AudioCtx.createBuffer(2, window.AudBuffSiz, window.AudSampleRate);
 
   window.currentAudio = undefined;
   window.PlayingSpec = -1;
+  window.ActiveBuffer = false;
 }
 
 module.exports = initAudio;
