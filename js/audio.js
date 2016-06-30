@@ -4,6 +4,9 @@ const { makeSpecImage, clearSpecImage } = require('./spec_image');
 const Audio = require('./audio_class');
 
 function playAudio(evt) {
+  if (window.currentAudio) {
+    window.currentAudio.stopSound();
+  }
   const mcoo = {};
   mcoo.x = evt.clientX;
   mcoo.y = evt.clientY;

@@ -3,6 +3,8 @@ module.exports = class Audio {
     this.playSound = this.playSound.bind(this);
     this.stopSound = this.stopSound.bind(this);
     this.equalPowerFade = this.equalPowerFade.bind(this);
+    this.exponentialFade = this.exponentialFade.bind(this);
+    this.linearFade = this.linearFade.bind(this);
 
     this.AudioCtx = window.AudioCtx;
     this.GainNode = this.AudioCtx.createGain();
@@ -16,6 +18,7 @@ module.exports = class Audio {
     } else {
       this.ActiveBuffer = 0;
     }
+    this.FadeType = window.FadeType;
   }
 
   playSound(buffer) {
@@ -28,31 +31,61 @@ module.exports = class Audio {
     this.AudioBuffer.copyToChannel(tmpBuffer, this.ActiveBuffer);
     this.AudioSource.buffer = this.AudioBuffer;
     this.AudioSource.loop = true;
+    // fade gain to 1
     const currentTime = this.AudioCtx.currentTime;
-    this.GainNode.gain.exponentialRampToValueAtTime(0.0001, currentTime);
-    this.GainNode.gain.exponentialRampToValueAtTime(1, currentTime + window.FadeTime);
-    // this.equalPowerFade(currentTime, false);
+    switch (this.FadeType) {
+      case 'linear':
+        this.linearFade(currentTime, false);
+        break;
+      case 'exponential':
+        this.exponentialFade(currentTime, false);
+        break;
+      case 'equal':
+        this.equalPowerFade(currentTime, false);
+        break;
+      default:
+        this.GainNode.gain.value = 1;
+    }
     this.AudioSource.start(0);
   }
 
   stopSound() {
-    // 4 ways to stop the audio
-    // way 1: stop the loop (current sound ends)
-    // this.AudioSource.loop = false;
-
-    // way 2: cut off the sound
-    // this.AudioSource.stop(0);
-
-    // way 3: play a 'blank' sound
-    // const buffer = new Array(window.AudBuffSiz).fill(0);
-    // this.playSound(buffer);
-
-    // way 4: fade gain to 0
+    // fade gain to 0
     const currentTime = this.AudioCtx.currentTime;
-    this.GainNode.gain.exponentialRampToValueAtTime(1, currentTime);
-    this.GainNode.gain.exponentialRampToValueAtTime(0.0001, currentTime + window.FadeTime);
-    // this.equalPowerFade(currentTime, true);
+    switch (this.FadeType) {
+      case 'linear':
+        this.linearFade(currentTime, true);
+        break;
+      case 'exponential':
+        this.exponentialFade(currentTime, true);
+        break;
+      case 'equal':
+        this.equalPowerFade(currentTime, true);
+        break;
+      default:
+        this.GainNode.gain.value = 0;
+    }
     setTimeout(() => (this.AudioSource.stop()), window.FadeTime * 1000);
+  }
+
+  linearFade(currentTime, fadeOut = true) {
+    if (fadeOut) {
+      this.GainNode.gain.linearRampToValueAtTime(1, currentTime);
+      this.GainNode.gain.linearRampToValueAtTime(0, currentTime + window.FadeTime);
+    } else {
+      this.GainNode.gain.linearRampToValueAtTime(0, currentTime);
+      this.GainNode.gain.linearRampToValueAtTime(1, currentTime + window.FadeTime);
+    }
+  }
+
+  exponentialFade(currentTime, fadeOut = true) {
+    if (fadeOut) {
+      this.GainNode.gain.exponentialRampToValueAtTime(1, currentTime);
+      this.GainNode.gain.exponentialRampToValueAtTime(0.0001, currentTime + window.FadeTime);
+    } else {
+      this.GainNode.gain.exponentialRampToValueAtTime(0.0001, currentTime);
+      this.GainNode.gain.exponentialRampToValueAtTime(1, currentTime + window.FadeTime);
+    }
   }
 
   equalPowerFade(currentTime, fadeOut = true) {

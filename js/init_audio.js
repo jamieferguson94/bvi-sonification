@@ -5,7 +5,8 @@ function initAudio() {
   window.AudMinFreq = 30.0;  // In Hz
   window.AudMaxFreq = 900.0;
   window.FadeTime = 0.3; // crossfade time in seconds
-  window.FadeSteps = 100; // number of steps to take durring crossfade
+  window.FadeSteps = 100; // number of steps to take durring crossfade (only used if FadeType = 'equal')
+  window.FadeType = 'exponential'; // can be 'linear', 'exponential', 'equal', or 'none'
 
   window.AudioCtx = new AudioContext();
   window.AudSampleRate = window.AudioCtx.sampleRate;
