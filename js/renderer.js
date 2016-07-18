@@ -1,68 +1,136 @@
 const d3 = require('d3');
 const linkCanvases = require('./link_canvases');
 const initAudio = require('./init_audio');
-const createListeners = require('./create_listeners');
+const { GasListeners, StarListeners } = require('./create_listeners');
+const { blueToRed } = require('./colorbar');
 // const mainLeap = require('./leap_position');
 
-let hdu;
 window.DataReady = false;
 
-const fitsFile = new window.astro.FITS(`${__dirname}/../data/cube4_stck.fits`, (dataInput) => {
-  hdu = dataInput.getHDU();
-  const fits = hdu.data;
+const fitsFile = new window.astro.FITS(`${__dirname}/../data/manga-8140-12703-LOGCUBE_MAPS-NONE-023_float32.fits`, (dataInput) => {
+  const hdu4 = dataInput.getHDU(4).data; // gas velocity
+  const hdu6 = dataInput.getHDU(6).data; // data mask
+  const hdu11 = dataInput.getHDU(11).data; // gas EW
+  const hdu13 = dataInput.getHDU(13).data; // data mask
+  const hdu17 = dataInput.getHDU(17).data; // star velocity
+  const hdu19 = dataInput.getHDU(19).data; // star mask
   /* eslint no-underscore-dangle: 0 */
-  window.DataCube = fits._getFrame(fits.buffer, fits.bitpix, fits.bzero, fits.bscale);
+  const DataCubeVelRaw = hdu4._getFrame(hdu4.buffer, hdu4.bitpix, hdu4.bzero, hdu4.bscale);
+  const DataMaskVel = hdu6._getFrame(hdu6.buffer, hdu6.bitpix, hdu6.bzero, hdu6.bscale);
+  window.DataCubeVel = DataCubeVelRaw.slice();
+  const DataCubeEWRaw = hdu11._getFrame(hdu11.buffer, hdu11.bitpix, hdu11.bzero, hdu11.bscale);
+  const DataMaskEW = hdu13._getFrame(hdu13.buffer, hdu13.bitpix, hdu13.bzero, hdu13.bscale);
+  window.DataCubeEW = DataCubeEWRaw.slice();
+  for (let i = 0; i < DataCubeVelRaw.length; ++i) {
+    // mask value of 0 = good data
+    window.DataCubeVel[i] = window.DataCubeVel[i] * (!DataMaskVel[i]);
+    window.DataCubeEW[i] = window.DataCubeEW[i] * (!DataMaskEW[i]);
+  }
+  const DataCubeStarRaw = hdu17._getFrame(hdu17.buffer, hdu17.bitpix, hdu17.bzero, hdu17.bscale);
+  const DataMaskStar = hdu19._getFrame(hdu19.buffer, hdu19.bitpix, hdu19.bzero, hdu19.bscale);
+  window.DataCubeStar = DataCubeStarRaw.slice();
+  for (let i = 0; i < DataCubeStarRaw.length; ++i) {
+    if (DataMaskStar[i]) {
+      window.DataCubeStar[i] = null;
+    }
+  }
   window.DataReady = true;
-  window.DataWidth = fits.width;
-  window.DataHeight = fits.height;
-  window.DataDepth = fits.depth;
-  const xmag = 3;
-  const ymag = 3;
+  window.DataWidth = hdu4.width;
+  window.DataHeight = hdu4.height;
+  window.DataDepth = hdu4.depth;
+  const xmag = 5;
+  const ymag = 5;
 
-  const tmpCopy = window.DataCube.slice();
+  let tmpCopy = window.DataCubeVel.slice();
   tmpCopy.sort();
-  window.DataMin = tmpCopy[0];
-  window.DataMax = tmpCopy[tmpCopy.length - 1];
+  window.DataVelMin = tmpCopy[0];
+  window.DataVelMax = tmpCopy[tmpCopy.length - 1];
+
+  tmpCopy = window.DataCubeEW.slice();
+  tmpCopy.sort();
+  window.DataEWMin = tmpCopy[0];
+  window.DataEWMax = tmpCopy[tmpCopy.length - 1];
+
+  tmpCopy = window.DataCubeStar.slice();
+  tmpCopy.sort();
+  window.DataStarMin = tmpCopy[0];
+  window.DataStarMax = tmpCopy[tmpCopy.length - 1];
 
   const width = xmag * window.DataWidth;
   const height = ymag * window.DataHeight;
-  const canvas = d3.select('#ImageCanvas')
+  const gasCanvas = d3.select('#GasCanvas')
     .attr('width', width)
     .attr('height', height)
     .attr('class', 'canvas');
 
-  const ctx = canvas.node().getContext('2d');
+  const gasCtx = gasCanvas.node().getContext('2d');
 
-  const scale = {
-    r: d3.scale.linear().domain([0, 2e3]).range([0, 255]),
-    g: d3.scale.linear().domain([0, 2e3]).range([0, 255]),
-    b: d3.scale.linear().domain([0, 2e3]).range([0, 255]),
-  };
+  // const velRange = Math.max(Math.abs(window.DataVelMin), Math.abs(window.DataVelMax), Math.abs(window.DataStarMin), Math.abs(window.DataStarMax));
+  const velRange = Math.max(Math.abs(window.DataStarMin), Math.abs(window.DataStarMax));
+  const scale = blueToRed(-velRange, velRange);
 
-  const channel = d3.scale.threshold().domain([20, 40]).range(['b', 'g', 'r']);
-  const imageData = ctx.getImageData(0, 0, xmag * window.DataWidth, ymag * window.DataHeight);
-  const data = imageData.data;
+  const gasImageData = gasCtx.getImageData(0, 0, xmag * window.DataWidth, ymag * window.DataHeight);
+  const gasData = gasImageData.data;
+
+  const starCanvas = d3.select('#StarCanvas')
+    .attr('width', width)
+    .attr('height', height)
+    .attr('class', 'canvas');
+
+  const starCtx = starCanvas.node().getContext('2d');
+
+  const starImageData = starCtx.getImageData(0, 0, xmag * window.DataWidth, ymag * window.DataHeight);
+  const starData = starImageData.data;
 
   for (let y = 0; y < window.DataHeight; ++y) {
     for (let v = 0; v < ymag; ++v) {
       for (let x = 0; x < window.DataWidth; ++x) {
         for (let u = 0; u < xmag; ++u) {
-          let index = ((y * ymag + v) * (window.DataWidth * xmag) + (x * xmag + u)) * 4;
-          const color = { r: 0, g: 0, b: 0 };
-          for (let z = 0; z < window.DataDepth; ++z) color[channel(z)] += window.DataCube[z * window.DataWidth * window.DataHeight + y * window.DataWidth + x];
-          // flipped colors!!! [hack!]
-          data[index] = scale.r(color.b);
-          data[++index] = scale.g(color.g);
-          data[++index] = scale.b(color.r);
-          data[++index] = 255;
+          // Reverse y so origin is in bottom left (insted of top left)
+          let starIndex = (((window.DataHeight - 1 - y) * ymag + v) * (window.DataWidth * xmag) + (x * xmag + u)) * 4;
+          // get star map
+          const sdx = y * window.DataWidth + x;
+          const starVel = window.DataCubeStar[sdx];
+          const starColor = d3.rgb(scale(starVel));
+          starData[starIndex] = starColor.r;
+          starData[++starIndex] = starColor.g;
+          starData[++starIndex] = starColor.b;
+          starData[++starIndex] = 255;
+          // get gas map
+          // Reverse y so origin is in bottom left (insted of top left)
+          let gasIndex = (((window.DataHeight - 1 - y) * ymag + v) * (window.DataWidth * xmag) + (x * xmag + u)) * 4;
+          let gasVel = 0;
+          for (let z = 0; z < window.DataDepth; ++z) {
+            // average velocity of all lines
+            const idx = z * window.DataWidth * window.DataHeight + y * window.DataWidth + x;
+            gasVel += window.DataCubeVel[idx];
+          }
+          gasVel /= window.DataDepth;
+          const gasColor = d3.rgb(scale(gasVel));
+          gasData[gasIndex] = gasColor.r;
+          gasData[++gasIndex] = gasColor.g;
+          gasData[++gasIndex] = gasColor.b;
+          gasData[++gasIndex] = 255;
         }
       }
     }
   }
-  ctx.putImageData(imageData, 0, 0);
+  starCtx.putImageData(starImageData, 0, 0);
+  gasCtx.putImageData(gasImageData, 0, 0);
   linkCanvases();
   initAudio();
-  createListeners();
+  if (window.Listeners) {
+    for (const l of window.Listeners) {
+      l.removeListeners();
+    }
+  } else {
+    window.Listeners = [];
+  }
+  window.Listeners.push(new GasListeners());
+  window.Listeners.push(new StarListeners());
+  for (const l of window.Listeners) {
+    l.addListeners();
+  }
   // mainLeap();
 });
 

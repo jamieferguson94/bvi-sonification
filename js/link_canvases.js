@@ -1,17 +1,19 @@
 function linkCanvases() {
-  window.ImageCnv = document.getElementById('ImageCanvas');
-  const ImageCtx = window.ImageCnv.getContext('2d');
-  const ICwidth = ImageCtx.canvas.width;
-  const ICheight = ImageCtx.canvas.height;
+  window.GasCnv = document.getElementById('GasCanvas');
+  const GasCtx = window.GasCnv.getContext('2d');
+  const GCwidth = GasCtx.canvas.width;
+  const GCheight = GasCtx.canvas.height;
   window.ImgOffX = 5;
   window.ImgOffY = 4;
-  window.ImageWidth = ICwidth - (window.ImgOffX * 2);
-  window.ImageHeight = ICheight - (window.ImgOffY * 2);
+  window.GasWidth = GCwidth - (window.ImgOffX * 2);
+  window.GasHeight = GCheight - (window.ImgOffY * 2);
 
-  const SpecCnv = document.getElementById('SpecCanvas');
-  window.SpecCtx = SpecCnv.getContext('2d');
-  window.SCwidth = window.SpecCtx.canvas.width;
-  window.SCheight = window.SpecCtx.canvas.height;
+  window.StarCnv = document.getElementById('StarCanvas');
+  const StarCtx = window.StarCnv.getContext('2d');
+  const SCwidth = StarCtx.canvas.width;
+  const SCheight = StarCtx.canvas.height;
+  window.StarWidth = SCwidth - (window.ImgOffX * 2);
+  window.StarHeight = SCheight - (window.ImgOffY * 2);
 }
 
 module.exports = linkCanvases;

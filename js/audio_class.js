@@ -1,104 +1,123 @@
-module.exports = class Audio {
-  constructor() {
+class AudioLine {
+  constructor(baseFreq) {
     this.playSound = this.playSound.bind(this);
     this.stopSound = this.stopSound.bind(this);
-    this.equalPowerFade = this.equalPowerFade.bind(this);
-    this.exponentialFade = this.exponentialFade.bind(this);
-    this.linearFade = this.linearFade.bind(this);
+    this.changeSound = this.changeSound.bind(this);
 
-    this.AudioCtx = window.AudioCtx;
-    this.GainNode = this.AudioCtx.createGain();
-    this.GainNode.connect(this.AudioCtx.destination);
-    this.GainNode.gain.value = 0;
-    this.AudioBuffer = window.AudioBuffer;
-    this.AudioSource = this.AudioCtx.createBufferSource();
-    this.AudioSource.connect(this.GainNode);
-    if (window.ActiveBuffer) {
-      this.ActiveBuffer = 1;
-    } else {
-      this.ActiveBuffer = 0;
-    }
-    this.FadeType = window.FadeType;
+    this.baseFreq = baseFreq;
+    this.GainNode = window.AudioCtx.createGain();
+    this.GainNode.connect(window.AudioCtx.destination);
+    this.Osc = window.AudioCtx.createOscillator();
+    this.Osc.connect(this.GainNode);
+    this.Osc.frequency.value = this.baseFreq;
   }
 
-  playSound(buffer) {
-    const tmpBuffer = buffer.slice();
-    /* const rampSize = 1024;
-    for (let i = 0; i < rampSize; i++) {
-      tmpBuffer[i] *= (i / rampSize);
-      tmpBuffer[tmpBuffer.length - i - 1] *= (i / rampSize);
-    } */
-    this.AudioBuffer.copyToChannel(tmpBuffer, this.ActiveBuffer);
-    this.AudioSource.buffer = this.AudioBuffer;
-    this.AudioSource.loop = true;
-    // fade gain to 1
-    const currentTime = this.AudioCtx.currentTime;
-    switch (this.FadeType) {
-      case 'linear':
-        this.linearFade(currentTime, false);
-        break;
-      case 'exponential':
-        this.exponentialFade(currentTime, false);
-        break;
-      case 'equal':
-        this.equalPowerFade(currentTime, false);
-        break;
-      default:
-        this.GainNode.gain.value = 1;
-    }
-    this.AudioSource.start(0);
+  playSound() {
+    this.Osc.start(0);
   }
 
   stopSound() {
-    // fade gain to 0
-    const currentTime = this.AudioCtx.currentTime;
-    switch (this.FadeType) {
-      case 'linear':
-        this.linearFade(currentTime, true);
-        break;
-      case 'exponential':
-        this.exponentialFade(currentTime, true);
-        break;
-      case 'equal':
-        this.equalPowerFade(currentTime, true);
-        break;
-      default:
-        this.GainNode.gain.value = 0;
-    }
-    setTimeout(() => (this.AudioSource.stop()), window.FadeTime * 1000);
+    this.Osc.stop();
   }
 
-  linearFade(currentTime, fadeOut = true) {
-    if (fadeOut) {
-      this.GainNode.gain.linearRampToValueAtTime(1, currentTime);
-      this.GainNode.gain.linearRampToValueAtTime(0, currentTime + window.FadeTime);
-    } else {
-      this.GainNode.gain.linearRampToValueAtTime(0, currentTime);
-      this.GainNode.gain.linearRampToValueAtTime(1, currentTime + window.FadeTime);
+  changeSound(ew, vel) {
+    if (isFinite(ew)) {
+      this.GainNode.gain.value = ew;
+    }
+    const beta = vel / window.ScaleVel;
+    const newFreq = this.baseFreq * Math.sqrt((1 - beta) / (1 + beta));
+    if (isFinite(newFreq)) {
+      this.Osc.frequency.value = newFreq;
     }
   }
+}
 
-  exponentialFade(currentTime, fadeOut = true) {
-    if (fadeOut) {
-      this.GainNode.gain.exponentialRampToValueAtTime(1, currentTime);
-      this.GainNode.gain.exponentialRampToValueAtTime(0.0001, currentTime + window.FadeTime);
-    } else {
-      this.GainNode.gain.exponentialRampToValueAtTime(0.0001, currentTime);
-      this.GainNode.gain.exponentialRampToValueAtTime(1, currentTime + window.FadeTime);
+class AudioEMLines {
+  constructor() {
+    this.playSound = this.playSound.bind(this);
+    this.stopSound = this.stopSound.bind(this);
+    this.changeSound = this.changeSound.bind(this);
+
+    this.Lines = [];
+    for (const base of window.BaseFreq) {
+      this.Lines.push(new AudioLine(base));
     }
   }
 
-  equalPowerFade(currentTime, fadeOut = true) {
-    // semed like a good idea, but makes the clicking worse :-(
-    for (let i = 0; i < window.FadeSteps; i++) {
-      const percent = (i + 1) / window.FadeSteps;
-      let gainValue;
-      if (fadeOut) {
-        gainValue = Math.cos(percent * 0.5 * Math.PI);
-      } else {
-        gainValue = Math.cos((1.0 - percent) * 0.5 * Math.PI);
-      }
-      this.GainNode.gain.setValueAtTime(gainValue, currentTime + (percent * window.FadeTime));
+  playSound() {
+    for (const line of this.Lines) {
+      line.playSound();
     }
   }
+
+  stopSound() {
+    for (const line of this.Lines) {
+      line.stopSound();
+    }
+  }
+
+  changeSound(ew, vel) {
+    let idx = 0;
+    for (const line of this.Lines) {
+      line.changeSound(ew[idx], vel[idx]);
+      idx++;
+    }
+  }
+}
+
+class AudioStarLine {
+  constructor(baseFreq, numFreq = 50) {
+    this.playSound = this.playSound.bind(this);
+    this.stopSound = this.stopSound.bind(this);
+    this.changeSound = this.changeSound.bind(this);
+
+    this.baseFreq = baseFreq;
+    this.GainNode = window.AudioCtx.createGain();
+    this.GainNode.connect(window.AudioCtx.destination);
+    this.Osc = window.AudioCtx.createOscillator();
+    this.Osc.connect(this.GainNode);
+    this.Osc.frequency.value = this.baseFreq;
+
+    // make a blackbody waveform
+    const real = new Float32Array(2 * numFreq);
+    const imag = new Float32Array(2 * numFreq);
+    let idx = 0;
+    // only populate first half of the array since those are the +frequencies
+    // there are no -frequencies so keep the back half zero
+    for (let i = 0; i < 15; i += 15 / numFreq) {
+      // give each frequency a random phase to prevent the waveform from being zero
+      // imag[idx] = Math.random() * 2 - 1;
+      real[idx] = 0.7011 * i * i * i / (Math.exp(i) - 1);
+      idx++;
+    }
+    // inital vale is 0 in the limit of the function
+    real[0] = 0;
+    const wave = window.AudioCtx.createPeriodicWave(real, imag);
+    this.Osc.setPeriodicWave(wave);
+  }
+
+  playSound() {
+    this.Osc.start(0);
+  }
+
+  stopSound() {
+    this.Osc.stop();
+  }
+
+  changeSound(ew, vel) {
+    if (isFinite(ew)) {
+      this.GainNode.gain.value = ew;
+    }
+    const beta = vel / window.ScaleVel;
+    const newFreq = this.baseFreq * Math.sqrt((1 - beta) / (1 + beta));
+    if (isFinite(newFreq)) {
+      this.Osc.frequency.value = newFreq;
+    }
+  }
+}
+
+module.exports = {
+  AudioLine,
+  AudioEMLines,
+  AudioStarLine,
 };

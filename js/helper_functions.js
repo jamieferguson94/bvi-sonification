@@ -1,46 +1,41 @@
-function mouse2data(mcoo) {
+function mouse2data(mcoo, map = 'gas') {
   const dcoo = {};
-  const rect = window.ImageCnv.getBoundingClientRect();
-  dcoo.x = Math.floor((mcoo.x - rect.left - window.ImgOffX) * (window.DataWidth / window.ImageWidth));
-  dcoo.y = Math.floor((mcoo.y - rect.top - window.ImgOffY) * (window.DataHeight / window.ImageHeight));
+  let rect;
+  switch (map) {
+    case 'gas':
+      rect = window.GasCnv.getBoundingClientRect();
+      break;
+    case 'star':
+      rect = window.StarCnv.getBoundingClientRect();
+      break;
+    default:
+      rect = window.StarCnv.getBoundingClientRect();
+  }
+  dcoo.x = Math.floor((mcoo.x - rect.left - window.ImgOffX) * (window.DataWidth / window.GasWidth));
+  dcoo.y = Math.floor((mcoo.y - rect.top - window.ImgOffY) * (window.DataHeight / window.GasHeight));
   return dcoo;
 }
 
-function data2mouse(dcoo) {
-  const mcoo = {};
-  const rect = window.ImageCnv.getBoundingClientRect();
-  mcoo.x = (dcoo.x / (window.DataWidth / window.ImageWidth)) + window.ImgOffX + rect.left;
-  mcoo.y = (dcoo.y / (window.DataHeight / window.ImageHeight)) + window.ImgOffY + rect.top;
-  return mcoo;
+function getDataEMManga(x, y) {
+  const ew = [];
+  const vel = [];
+  for (let z = 0; z < window.DataDepth; ++z) {
+    // Reverse y so origin is in bottom left (insted of top left)
+    const idx = z * window.DataWidth * window.DataHeight + (window.DataHeight - 1 - y) * window.DataWidth + x;
+    vel.push(window.DataCubeVel[idx]);
+    ew.push(Math.max(window.DataCubeEW[idx] / window.DataEWMax, 0));
+  }
+  return { ew, vel };
 }
 
-function datafreq2audiofreq(wlen) {
-  const frange = window.AudMaxFreq - window.AudMinFreq; // Range of frequencies
-  const wdist = wlen / (window.DataDepth - 1); // Distance along spectrum (from the long-wavelength end)
-  const freq = window.AudMinFreq + (wdist * frange);
-  return freq;
-}
-
-function audiofreq2fftindex(freq) {
-  const indx = freq * window.AudBuffSiz / window.AudSampleRate;
-  return Math.floor(indx);
-}
-
-function getDataIdx(x, y, z) {
-  const i = x + (y * window.DataWidth) + (z * window.DataWidth * window.DataHeight);
-  return i;
-}
-
-function getRGBIdx(x, y) {
-  const i = x + (y * window.DataWidth);
-  return i;
+function getDataStarManga(x, y) {
+  // Reverse y so origin is in bottom left (insted of top left)
+  const idx = (window.DataHeight - 1 - y) * window.DataWidth + x;
+  return window.DataCubeStar[idx];
 }
 
 module.exports = {
   mouse2data,
-  data2mouse,
-  datafreq2audiofreq,
-  audiofreq2fftindex,
-  getDataIdx,
-  getRGBIdx,
+  getDataEMManga,
+  getDataStarManga,
 };

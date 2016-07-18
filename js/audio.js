@@ -1,69 +1,91 @@
-const { mouse2data, getDataIdx } = require('./helper_functions');
-const spec2audio = require('./spec_to_audio');
-const { makeSpecImage, clearSpecImage } = require('./spec_image');
-const Audio = require('./audio_class');
+const { mouse2data, getDataEMManga, getDataStarManga } = require('./helper_functions');
+const { AudioEMLines, AudioStarLine } = require('./audio_class');
 
-function playAudio(evt) {
+function playGasAudio(evt) {
   if (window.currentAudio) {
     window.currentAudio.stopSound();
   }
   const mcoo = {};
   mcoo.x = evt.clientX;
   mcoo.y = evt.clientY;
-  const dcoo = mouse2data(mcoo);
-  const speci = getDataIdx(dcoo.x, dcoo.y, 0);
-  const buffer = spec2audio(speci);
-  window.currentAudio = new Audio();
-  window.currentAudio.playSound(buffer);
-  window.PlayingSpec = speci;
-  makeSpecImage(speci);
+  const dcoo = mouse2data(mcoo, 'gas');
+  const { ew, vel } = getDataEMManga(dcoo.x, dcoo.y);
+  window.currentAudio = new AudioEMLines();
+  window.currentAudio.changeSound(ew, vel);
+  window.currentAudio.playSound();
+  window.PlayingSpec = dcoo;
 }
 
-function stopAudio() {
+function stopGasAudio() {
   window.PlayingSpec = -1;
   if (window.currentAudio) {
     window.currentAudio.stopSound();
     window.currentAudio = undefined;
   }
-  clearSpecImage();
 }
 
-function changeAudio(evt) {
+function changeGasAudio(evt) {
   const mcoo = {};
   mcoo.x = evt.clientX;
   mcoo.y = evt.clientY;
-  const dcoo = mouse2data(mcoo);
-  const speci = getDataIdx(dcoo.x, dcoo.y, 0);
-  if ((speci !== window.PlayingSpec) || (window.PlayingSpec < 0)) {
-    stopAudio(evt);
-    window.ActiveBuffer = !window.ActiveBuffer;
-    playAudio(evt);
+  const dcoo = mouse2data(mcoo, 'gas');
+  const { ew, vel } = getDataEMManga(dcoo.x, dcoo.y);
+  if (window.currentAudio) {
+    if ((dcoo.x !== window.PlayingSpec.x) || (dcoo.y !== window.PlayingSpec.y) || (window.PlayingSpec < 0)) {
+      window.currentAudio.changeSound(ew, vel);
+    }
   }
 }
 
-let previousPosition = false;
-function checkAudio() {
-  const indexFinger = document.getElementById('dip_0_1');
-  const x = parseInt(indexFinger.offset().left - document.body.scrollLeft(), 10);
-  const y = parseInt(indexFinger.offset().top - document.body.scrollTop(), 10);
-  const rect = window.ImageCnv.getBoundingClientRect();
-  if (x >= rect.left && x <= rect.right && y <= rect.bottom && y >= rect.top) {
-    const evt = { clientX: x, clientY: y };
-    if (!previousPosition) {
-      playAudio(evt);
-      previousPosition = true;
-    } else {
-      changeAudio(evt);
-    }
+function playStarAudio(evt) {
+  if (window.currentAudio) {
+    window.currentAudio.stopSound();
+  }
+  const mcoo = {};
+  mcoo.x = evt.clientX;
+  mcoo.y = evt.clientY;
+  const dcoo = mouse2data(mcoo, 'star');
+  const vel = getDataStarManga(dcoo.x, dcoo.y);
+  window.currentAudio = new AudioStarLine(window.StarBaseFreq, 10);
+  if (vel) {
+    window.currentAudio.changeSound(1, vel);
   } else {
-    stopAudio('out of bounds');
-    previousPosition = false;
+    window.currentAudio.changeSound(0, vel);
+  }
+  window.currentAudio.playSound();
+  window.PlayingSpec = dcoo;
+}
+
+function stopStarAudio() {
+  window.PlayingSpec = -1;
+  if (window.currentAudio) {
+    window.currentAudio.stopSound();
+    window.currentAudio = undefined;
+  }
+}
+
+function changeStarAudio(evt) {
+  const mcoo = {};
+  mcoo.x = evt.clientX;
+  mcoo.y = evt.clientY;
+  const dcoo = mouse2data(mcoo, 'star');
+  const vel = getDataStarManga(dcoo.x, dcoo.y);
+  if (window.currentAudio) {
+    if ((dcoo.x !== window.PlayingSpec.x) || (dcoo.y !== window.PlayingSpec.y) || (window.PlayingSpec < 0)) {
+      if (vel) {
+        window.currentAudio.changeSound(1, vel);
+      } else {
+        window.currentAudio.changeSound(0, vel);
+      }
+    }
   }
 }
 
 module.exports = {
-  checkAudio,
-  playAudio,
-  changeAudio,
-  stopAudio,
+  playGasAudio,
+  changeGasAudio,
+  stopGasAudio,
+  playStarAudio,
+  changeStarAudio,
+  stopStarAudio,
 };
