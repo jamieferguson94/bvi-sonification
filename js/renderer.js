@@ -7,37 +7,44 @@ const { blueToRed } = require('./colorbar');
 
 window.DataReady = false;
 
-const fitsFile = new window.astro.FITS(`${__dirname}/../data/manga-8140-12703-LOGCUBE_MAPS-NONE-023_float32.fits`, (dataInput) => {
-  const hdu4 = dataInput.getHDU(4).data; // gas velocity
-  const hdu6 = dataInput.getHDU(6).data; // data mask
-  const hdu11 = dataInput.getHDU(11).data; // gas EW
-  const hdu13 = dataInput.getHDU(13).data; // data mask
-  const hdu17 = dataInput.getHDU(17).data; // star velocity
-  const hdu19 = dataInput.getHDU(19).data; // star mask
+const fitsFile = new window.astro.FITS(`${__dirname}/../data/manga-8138-12704-MAPS-SPX-GAU-MILESHC-NZT_float32.fits`, (dataInput) => {
+  // using mpl-5 maps cube
+  // get gas velocity info
+  const hduGasVel = dataInput.getHDU(34).data;
+  const hduGasVelMask = dataInput.getHDU(36).data;
+  // get gas flux info
+  const hduGasFlux = dataInput.getHDU(25).data;
+  const hduGasFluxMask = dataInput.getHDU(27).data;
+  // get star velocity info
+  const hduStarVel = dataInput.getHDU(16).data;
+  const hduStarVelMask = dataInput.getHDU(18).data;
+  // get star flux info
+  const hduStarFlux = dataInput.getHDU(4).data;
   /* eslint no-underscore-dangle: 0 */
-  const DataCubeVelRaw = hdu4._getFrame(hdu4.buffer, hdu4.bitpix, hdu4.bzero, hdu4.bscale);
-  const DataMaskVel = hdu6._getFrame(hdu6.buffer, hdu6.bitpix, hdu6.bzero, hdu6.bscale);
+  const DataCubeVelRaw = hduGasVel._getFrame(hduGasVel.buffer, hduGasVel.bitpix, hduGasVel.bzero, hduGasVel.bscale);
+  const DataMaskVel = hduGasVelMask._getFrame(hduGasVelMask.buffer, hduGasVelMask.bitpix, hduGasVelMask.bzero, hduGasVelMask.bscale);
   window.DataCubeVel = DataCubeVelRaw.slice();
-  const DataCubeEWRaw = hdu11._getFrame(hdu11.buffer, hdu11.bitpix, hdu11.bzero, hdu11.bscale);
-  const DataMaskEW = hdu13._getFrame(hdu13.buffer, hdu13.bitpix, hdu13.bzero, hdu13.bscale);
-  window.DataCubeEW = DataCubeEWRaw.slice();
+  const DataCubeFluxRaw = hduGasFlux._getFrame(hduGasFlux.buffer, hduGasFlux.bitpix, hduGasFlux.bzero, hduGasFlux.bscale);
+  const DataMaskFlux = hduGasFluxMask._getFrame(hduGasFluxMask.buffer, hduGasFluxMask.bitpix, hduGasFluxMask.bzero, hduGasFluxMask.bscale);
+  window.DataCubeFlux = DataCubeFluxRaw.slice();
   for (let i = 0; i < DataCubeVelRaw.length; ++i) {
     // mask value of 0 = good data
     window.DataCubeVel[i] = window.DataCubeVel[i] * (!DataMaskVel[i]);
-    window.DataCubeEW[i] = window.DataCubeEW[i] * (!DataMaskEW[i]);
+    window.DataCubeFlux[i] = window.DataCubeFlux[i] * (!DataMaskFlux[i]);
   }
-  const DataCubeStarRaw = hdu17._getFrame(hdu17.buffer, hdu17.bitpix, hdu17.bzero, hdu17.bscale);
-  const DataMaskStar = hdu19._getFrame(hdu19.buffer, hdu19.bitpix, hdu19.bzero, hdu19.bscale);
+  const DataCubeStarRaw = hduStarVel._getFrame(hduStarVel.buffer, hduStarVel.bitpix, hduStarVel.bzero, hduStarVel.bscale);
+  const DataMaskStar = hduStarVelMask._getFrame(hduStarVelMask.buffer, hduStarVelMask.bitpix, hduStarVelMask.bzero, hduStarVelMask.bscale);
   window.DataCubeStar = DataCubeStarRaw.slice();
+  const DataCubeStarFluxRaw = hduStarFlux._getFrame(hduStarFlux.buffer, hduStarFlux.bitpix, hduStarFlux.bzero, hduStarFlux.bscale);
+  window.DataCubeStarFlux = DataCubeStarFluxRaw.slice();
   for (let i = 0; i < DataCubeStarRaw.length; ++i) {
-    if (DataMaskStar[i]) {
-      window.DataCubeStar[i] = null;
-    }
+    window.DataCubeStar[i] = window.DataCubeStar[i] * (!DataMaskStar[i]);
+    window.DataCubeStarFlux[i] = window.DataCubeStarFlux[i] * (!DataMaskStar[i]);
   }
   window.DataReady = true;
-  window.DataWidth = hdu4.width;
-  window.DataHeight = hdu4.height;
-  window.DataDepth = hdu4.depth;
+  window.DataWidth = hduGasVel.width;
+  window.DataHeight = hduGasVel.height;
+  window.DataDepth = hduGasVel.depth;
   const xmag = 5;
   const ymag = 5;
 
@@ -46,15 +53,20 @@ const fitsFile = new window.astro.FITS(`${__dirname}/../data/manga-8140-12703-LO
   window.DataVelMin = tmpCopy[0];
   window.DataVelMax = tmpCopy[tmpCopy.length - 1];
 
-  tmpCopy = window.DataCubeEW.slice();
+  tmpCopy = window.DataCubeFlux.slice();
   tmpCopy.sort();
-  window.DataEWMin = tmpCopy[0];
-  window.DataEWMax = tmpCopy[tmpCopy.length - 1];
+  window.DataFluxMin = tmpCopy[0];
+  window.DataFluxMax = tmpCopy[tmpCopy.length - 1];
 
   tmpCopy = window.DataCubeStar.slice();
   tmpCopy.sort();
   window.DataStarMin = tmpCopy[0];
   window.DataStarMax = tmpCopy[tmpCopy.length - 1];
+
+  tmpCopy = window.DataCubeStarFlux.slice();
+  tmpCopy.sort();
+  window.DataStarFluxMin = tmpCopy[0];
+  window.DataStarFluxMax = tmpCopy[tmpCopy.length - 1];
 
   const width = xmag * window.DataWidth;
   const height = ymag * window.DataHeight;

@@ -21,13 +21,17 @@ class AudioLine {
   }
 
   changeSound(ew, vel) {
-    if (isFinite(ew)) {
-      this.GainNode.gain.value = ew;
-    }
     const beta = vel / window.ScaleVel;
     const newFreq = this.baseFreq * Math.sqrt((1 - beta) / (1 + beta));
     if (isFinite(newFreq)) {
       this.Osc.frequency.value = newFreq;
+      // set gain based on frequency so low Hz sounds the same volume as high Hz
+      // aka pink noise like
+      const gain = Math.pow(500 / newFreq, 0.5);
+      // const gain = 1;
+      if (isFinite(ew)) {
+        this.GainNode.gain.value = gain * ew;
+      }
     }
   }
 }
@@ -65,19 +69,9 @@ class AudioEMLines {
   }
 }
 
-class AudioStarLine {
+class AudioStarLine extends AudioLine {
   constructor(baseFreq, numFreq = 50) {
-    this.playSound = this.playSound.bind(this);
-    this.stopSound = this.stopSound.bind(this);
-    this.changeSound = this.changeSound.bind(this);
-
-    this.baseFreq = baseFreq;
-    this.GainNode = window.AudioCtx.createGain();
-    this.GainNode.connect(window.AudioCtx.destination);
-    this.Osc = window.AudioCtx.createOscillator();
-    this.Osc.connect(this.GainNode);
-    this.Osc.frequency.value = this.baseFreq;
-
+    super(baseFreq);
     // make a blackbody waveform
     const real = new Float32Array(2 * numFreq);
     const imag = new Float32Array(2 * numFreq);
@@ -94,25 +88,6 @@ class AudioStarLine {
     real[0] = 0;
     const wave = window.AudioCtx.createPeriodicWave(real, imag);
     this.Osc.setPeriodicWave(wave);
-  }
-
-  playSound() {
-    this.Osc.start(0);
-  }
-
-  stopSound() {
-    this.Osc.stop();
-  }
-
-  changeSound(ew, vel) {
-    if (isFinite(ew)) {
-      this.GainNode.gain.value = ew;
-    }
-    const beta = vel / window.ScaleVel;
-    const newFreq = this.baseFreq * Math.sqrt((1 - beta) / (1 + beta));
-    if (isFinite(newFreq)) {
-      this.Osc.frequency.value = newFreq;
-    }
   }
 }
 
