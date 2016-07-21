@@ -1,5 +1,5 @@
 const { mouse2data, getDataEMManga, getDataStarManga } = require('./helper_functions');
-const { AudioEMLines, AudioStarLine } = require('./audio_class');
+const { AudioEMLines, AudioStarLine, freqVisual } = require('./audio_class');
 
 function playGasAudio(evt) {
   if (window.currentAudio) {
@@ -14,6 +14,7 @@ function playGasAudio(evt) {
   window.currentAudio.changeSound(ew, vel);
   window.currentAudio.playSound();
   window.PlayingSpec = dcoo;
+  freqVisual();
 }
 
 function stopGasAudio() {
@@ -46,10 +47,11 @@ function playStarAudio(evt) {
   mcoo.y = evt.clientY;
   const dcoo = mouse2data(mcoo, 'star');
   const { ew, vel } = getDataStarManga(dcoo.x, dcoo.y);
-  window.currentAudio = new AudioStarLine(window.StarBaseFreq, 10);
+  window.currentAudio = new AudioStarLine(window.StarBaseFreq, 15);
   window.currentAudio.changeSound(ew, vel);
   window.currentAudio.playSound();
   window.PlayingSpec = dcoo;
+  freqVisual();
 }
 
 function stopStarAudio() {

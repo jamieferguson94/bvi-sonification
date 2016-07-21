@@ -14,6 +14,8 @@ function linkCanvases() {
   const SCheight = StarCtx.canvas.height;
   window.StarWidth = SCwidth - (window.ImgOffX * 2);
   window.StarHeight = SCheight - (window.ImgOffY * 2);
+
+  window.FreqCnv = document.getElementById('FreqCanvas');
 }
 
 module.exports = linkCanvases;

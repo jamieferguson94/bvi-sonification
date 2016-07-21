@@ -9,16 +9,16 @@ window.DataReady = false;
 
 const fitsFile = new window.astro.FITS(`${__dirname}/../data/manga-8138-12704-MAPS-SPX-GAU-MILESHC-NZT_float32.fits`, (dataInput) => {
   // using mpl-5 maps cube
-  // get gas velocity info
+  // get gas velocity info (EMLINE_GVEL)
   const hduGasVel = dataInput.getHDU(34).data;
   const hduGasVelMask = dataInput.getHDU(36).data;
-  // get gas flux info
+  // get gas flux info (EMLINE_SFLUX)
   const hduGasFlux = dataInput.getHDU(25).data;
   const hduGasFluxMask = dataInput.getHDU(27).data;
-  // get star velocity info
+  // get star velocity info (STELLAR_VEL)
   const hduStarVel = dataInput.getHDU(16).data;
   const hduStarVelMask = dataInput.getHDU(18).data;
-  // get star flux info
+  // get star flux info (SPXL_MFLUX)
   const hduStarFlux = dataInput.getHDU(4).data;
   /* eslint no-underscore-dangle: 0 */
   const DataCubeVelRaw = hduGasVel._getFrame(hduGasVel.buffer, hduGasVel.bitpix, hduGasVel.bzero, hduGasVel.bscale);

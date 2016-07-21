@@ -4,6 +4,7 @@ function initAudio() {
   window.AudioCtx = new AudioContext();
   window.AudSampleRate = window.AudioCtx.sampleRate;
   window.AudioBuffer = window.AudioCtx.createBuffer(1, window.AudBuffSiz, window.AudSampleRate);
+  window.Analyser = window.AudioCtx.createAnalyser();
 
   window.currentAudio = undefined;
   window.PlayingSpec = -1;
@@ -19,13 +20,22 @@ function initAudio() {
     314.47860904,
   ]; */
   // line frequency divided by 0.7e12 Hz.
-  window.BaseFreq = [
+  /* window.BaseFreq = [
     1148.80616953, 880.86166187, 881.22415638, 855.18158946,
     679.58575056, 672.85929301, 653.95471064, 652.4602986,
     650.37955961, 637.50363203, 636.1778669, 1149.11440837,
     1148.498096, 1078.50652229, 1044.06372501, 986.58129463,
     913.75067207, 728.73054279, 484.96765938, 472.13641274,
     449.25515577,
+  ]; */
+  // line frequency divided by 0.4e12 Hz.
+  window.BaseFreq = [
+    2010.41079667, 1541.50790827, 1542.14227366, 1496.56778155,
+    1189.27506347, 1177.50376277, 1144.42074362, 1141.80552255,
+    1138.16422931, 1115.63135606, 1113.31126708, 2010.95021465,
+    2009.87166801, 1887.386414, 1827.11151877, 1726.51726561,
+    1599.06367613, 1275.27844989, 848.69340392, 826.2387223,
+    786.19652261,
   ];
   window.StarBaseFreq = 600; // in Hz
 }

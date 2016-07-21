@@ -6,6 +6,7 @@ class AudioLine {
 
     this.baseFreq = baseFreq;
     this.GainNode = window.AudioCtx.createGain();
+    this.GainNode.connect(window.Analyser);
     this.GainNode.connect(window.AudioCtx.destination);
     this.Osc = window.AudioCtx.createOscillator();
     this.Osc.connect(this.GainNode);
@@ -91,8 +92,35 @@ class AudioStarLine extends AudioLine {
   }
 }
 
+function freqVisual(bins = 4096) {
+  window.Analyser.fftSize = bins;
+  const bufferLength = window.Analyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+  const width = window.FreqCnv.width;
+  const height = window.FreqCnv.height;
+  const canvasCtx = window.FreqCnv.getContext('2d');
+  canvasCtx.clearRect(0, 0, width, height);
+  function draw() {
+    window.drawVisual = requestAnimationFrame(draw);
+    window.Analyser.getByteFrequencyData(dataArray);
+    canvasCtx.fillStyle = 'rgb(256, 256, 256)';
+    canvasCtx.fillRect(0, 0, width, height);
+    const barWidth = (width / bufferLength);
+    let barHeight;
+    let x = 0;
+    for (let i = 0; i < bufferLength; i++) {
+      barHeight = dataArray[i];
+      canvasCtx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`;
+      canvasCtx.fillRect(x, height - barHeight / 2, barWidth, barHeight / 2);
+      x += barWidth + 1;
+    }
+  }
+  draw();
+}
+
 module.exports = {
   AudioLine,
   AudioEMLines,
   AudioStarLine,
+  freqVisual,
 };

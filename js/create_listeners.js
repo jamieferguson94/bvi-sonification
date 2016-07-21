@@ -22,6 +22,7 @@ class GasListeners {
     if (window.DataReady) {
       this.ClickStatus = false;
       stopGasAudio(evt);
+      window.cancelAnimationFrame(window.drawVisual);
     }
   }
 
@@ -68,6 +69,7 @@ class StarListeners {
     if (window.DataReady) {
       this.ClickStatus = false;
       stopStarAudio(evt);
+      window.cancelAnimationFrame(window.drawVisual);
     }
   }
 
