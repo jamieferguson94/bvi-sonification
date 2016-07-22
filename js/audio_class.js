@@ -92,7 +92,7 @@ class AudioStarLine extends AudioLine {
   }
 }
 
-function freqVisual(bins = 4096) {
+function freqVisual(bins = 2048) {
   window.Analyser.fftSize = bins;
   const bufferLength = window.Analyser.frequencyBinCount;
   const dataArray = new Uint8Array(bufferLength);
@@ -110,9 +110,9 @@ function freqVisual(bins = 4096) {
     let x = 0;
     for (let i = 0; i < bufferLength; i++) {
       barHeight = dataArray[i];
-      canvasCtx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`;
-      canvasCtx.fillRect(x, height - barHeight / 2, barWidth, barHeight / 2);
-      x += barWidth + 1;
+      canvasCtx.fillStyle = 'rgb(256, 50, 50)';
+      canvasCtx.fillRect(x, height - barHeight, barWidth, barHeight);
+      x += barWidth;
     }
   }
   draw();

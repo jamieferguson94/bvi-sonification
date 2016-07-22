@@ -135,9 +135,8 @@ const fitsFile = new window.astro.FITS(`${__dirname}/../data/manga-8138-12704-MA
     for (const l of window.Listeners) {
       l.removeListeners();
     }
-  } else {
-    window.Listeners = [];
   }
+  window.Listeners = [];
   window.Listeners.push(new GasListeners());
   window.Listeners.push(new StarListeners());
   for (const l of window.Listeners) {
