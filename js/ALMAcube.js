@@ -5,6 +5,7 @@
 // ----------------------------------------------------------------------
 //
 // AMN 24/06/15
+// AMN 01/08/16: Updated audio to reduce "clicks" and crashing
 //
 //
 // Requires jsfft-master/lib/complex_array.js and jsfft-master/lib/fft.js
@@ -39,14 +40,17 @@ var DataMin, DataMax;
 
     // ------ The Audio variables
 var AudioCtx;         // The Audio context
-var AudioBuffer;      // A buffer for the audio
-var AudioSource;      // The audio source to connect the buffer to the context
+var AudioBuffer = []; // Array of buffers for the audio
+var AudCurrBuff;      // The ID selecting the current buffer
+var AudMaxBuff;       // The maximum number of buffers...
+var AudioSource = []; // The audio sources to connect the buffer to the context
+var AudioGain = [];   // Control, the volumne of the two soruces independently
 var AudBuffSiz;       // The audio buffer size (in samples)
 var AudSampleRate;    // Sample rate (probably 44100 sam/sec but could be changed)
 var AudAmplify;       // The amount to amplify the spectral values
 var AudAmpScale;      // Power to scale the amps by (>1.0 to exaggerate peaks a bit more)
 var AudMinFreq, AudMaxFreq; // Lower and upper frequencies to map to
-var GainNode;
+var AudFadeTime;      // Duration of fade in/out (in seconds)
 
 
     // ======== Functions to setup and link-in canvases and contexts, initialise variables etc
@@ -68,49 +72,65 @@ function linkCanvases() {
 
 }
 
-      // -------- Initialise Audio setting and context/buffer
+        // -------- Initialise Audio setting and context/buffer
+        // -------- Change teh values here to optimse for a particular data set etc.
 function initAudio() {
 
       // Default values for the parameters
-  AudBuffSiz = 4096;
-  AudAmplify = 0.02;
-  AudAmpScale = 0.8; // 1.3 is good to emphasise "peakiness", 0.5 good to "smooth" the sounds out a bit
-  AudMinFreq = 30.0;  // In Hz
-  AudMaxFreq = 900.0;
+    AudBuffSiz = 512;  // Too small and limited range of pitches. Too large and it may lead to "warbling". The ideal balance is data-dependent
+    AudAmplify = 0.01; // THis may need to be "tweaked" for different data sets
+    AudAmpScale = 1.0; // 1.3 is good to emphasise "peakiness", 0.5 good to "smooth" the sounds out a bit
+    AudMinFreq = 100.0;  // In Hz
+    AudMaxFreq = 2000.0;
+    AudMaxBuff = 32;  // The maximum number of buffers (the larger the more memory, but the less chance of "clicks" from fast mouse movement)
+    AudFadeTime = 0.5; // Fade in/out time in seconds. Too small and get "clicking"
 
-  AudioCtx = new AudioContext();
-  GainNode = AudioCtx.createGain();
-  //GainNode.connect(AudioCtx.destination);
-  //GainNode.gain.value = 1;
-  AudSampleRate = AudioCtx.sampleRate;
-  AudioBuffer = AudioCtx.createBuffer(1, AudBuffSiz, AudSampleRate);
+    AudioCtx = new AudioContext();
+    AudSampleRate = AudioCtx.sampleRate;
+    for(var i=0; i<AudMaxBuff; i++) {
+	AudioBuffer[i] = AudioCtx.createBuffer(1, AudBuffSiz, AudSampleRate);
+    }
+    AudCurrBuff = 0;
 
-  PlayingSpec = -1;
+    PlayingSpec = -1;
 
 }
+
 
     // -------- Setup "Listener" functions for mouse activity etc
 function createListeners() {
-  ImageCnv.addEventListener('mousedown', function(evt) {
+
+    ImageCnv.addEventListener('mousedown', function(evt) {
         if(DataReady) {
-          ClickStatus = true;
-          playAudio(evt);
+            ClickStatus = true;
+            playAudio(evt);
         }
-      }, false);
-  ImageCnv.addEventListener('mouseup', function(evt) {
-         if(DataReady) {
-           ClickStatus = false;
-           stopAudio(evt);
-         }
-      }, false);
-  ImageCnv.addEventListener('mousemove', function(evt) {
+    }, false);
+    ImageCnv.addEventListener('mouseup', function(evt) {
         if(DataReady) {
-          if(ClickStatus) {
-            changeAudio(evt);
-          }
+            ClickStatus = false;
+            stopAudioAll(evt);
+        }
+    }, false);
+    ImageCnv.addEventListener('mouseenter', function(evt) { // Reverse the effects of "mouseout", *if* mouse is also down
+        if(DataReady && ClickStatus) {
+            playAudio(evt);
+        }
+    }, false);
+    ImageCnv.addEventListener('mouseout', function(evt) { // Safety in case "mouseup" not seen. Do not change "clickstatus"
+        if(DataReady && ClickStatus) {
+            stopAudioAll(evt);
+        }
+    }, false);
+    ImageCnv.addEventListener('mousemove', function(evt) {
+        if(DataReady) {
+            if(ClickStatus) {
+		changeAudio(evt);
+            }
         }
       }, false);
 }
+
 
     // ======== Functions to map various coordinates
     //          (e.g. data<->mouse coordinates, spectral wavelength to audio
@@ -355,15 +375,21 @@ function playAudio(evt) {
   mcoo.y = evt.clientY;
   dcoo = mouse2data(mcoo);
   //console.log(dcoo);
-  var speci = getDataIdx(dcoo.x, dcoo.y, 0);
+    var speci = getDataIdx(dcoo.x, dcoo.y, 0);
 
-      // Calculate the appropriate sound and store it in the audiobuffer
-  AudioSource = AudioCtx.createBufferSource();
+    // If the audio source already exists, "stop" it.
+  if(AudioSource[AudCurrBuff]) {
+	AudioSource[AudCurrBuff].stop();
+  }
+  AudioSource[AudCurrBuff] = AudioCtx.createBufferSource();
+   
+    // Calculate the appropriate sound and store it in the audiobuffer
   spec2audio(speci);
   PlayingSpec = speci;
 
-      // Play the sound (it will loop until stopped)
-  AudioSource.start(0);
+    // Play the sound (it will loop until stopped)
+  AudioSource[AudCurrBuff].start(0);
+  AudioGain[AudCurrBuff].gain.linearRampToValueAtTime(0.5, AudioCtx.currentTime + AudFadeTime); // medium Fade in
 
       // Update the spectral image
   makeSpecImage(speci);
@@ -376,25 +402,29 @@ function stopAudio(evt) {
   // console.log(evt);
   // console.log("++STOP: ("+evt.clientX+", "+evt.clientY+")");
 
+
+  AudioGain[AudCurrBuff].gain.linearRampToValueAtTime(0.0, AudioCtx.currentTime + AudFadeTime); // medium Fade out
+
   PlayingSpec = -1;
-  if (AudioSource) {
-    //AudioSource.stop(0);
-    GainNode.gain.value = 0;
-    AudioSource = AudioCtx.createBufferSource();
-    var tmpBuffer = AudioBuffer.getChannelData(0);
-    for(i=0; i<AudBuffSiz; i++) {
-      tmpBuffer[i] = 0.0;
-    }
-
-    //AudioSource.buffer = AudioBuffer;
-    AudioSource.connect(AudioCtx.destination);
-    AudioSource.loop = true;
-    AudioSource.start(0);
-  }
-
   clearSpecImage();
 
 }
+
+    // -------- Stop playing ALL audio
+function stopAudioAll(evt) {
+    console.log("++STOPALL: Buffer"+AudCurrBuff+" ("+evt.clientX+", "+evt.clientY+")");
+
+    for(var i=0; i<AudMaxBuff; i++) {
+	if(AudioGain[i]) {
+	    AudioGain[i].gain.linearRampToValueAtTime(0.0, AudioCtx.currentTime + AudFadeTime); // medium Fade out
+	}
+    }
+
+    PlayingSpec = -1;
+    clearSpecImage();
+
+}
+
 
     // -------- Change the tone
 function changeAudio(evt) {
@@ -410,6 +440,8 @@ function changeAudio(evt) {
   if((speci != PlayingSpec) || (PlayingSpec < 0)) {  
     // console.log("++CHANGE: ("+evt.clientX+", "+evt.clientY+")");
     stopAudio(evt);
+    AudCurrBuff++;
+    if(AudCurrBuff >= AudMaxBuff) AudCurrBuff = 0;
     playAudio(evt);
   }
 
@@ -420,40 +452,34 @@ function changeAudio(evt) {
     //            speci: the first element of the spectrum
 function spec2audio(speci) {
 
-  var fftdata = new complex_array.ComplexArray(AudBuffSiz);
+    var fftdata = new complex_array.ComplexArray(AudBuffSiz);
 
      // Initialise to 0
-  for(var i=0; i<AudBuffSiz; i++) {
-    fftdata.real[i] = 0;
-    fftdata.imag[i] = 0;
-  }
+    for(var i=0; i<AudBuffSiz; i++) {
+	fftdata.real[i] = 0;
+	fftdata.imag[i] = 0;
+    }
 
     // Loop over the input spectrum and map from input "wavelength" to spectral frequency
-  for(i=0; i<DataDepth; i++) {
-    var f = datafreq2audiofreq(i);
-    var fi = audiofreq2fftindex(f);
-    fftdata.real[fi] = fftdata.real[fi] + (AudAmplify * Math.pow(DataCube[speci + (i * DataWidth * DataHeight)], AudAmpScale));
-  }
+    for(i=0; i<DataDepth; i++) {
+	var f = datafreq2audiofreq(i);
+	var fi = audiofreq2fftindex(f);
+	fftdata.real[fi] = fftdata.real[fi] + (AudAmplify * Math.pow(DataCube[speci + i], AudAmpScale));
+    }
 
-  fftdata.InvFFT();
+    fftdata.InvFFT();
 
-  var tmpBuffer = AudioBuffer.getChannelData(0);
-  for(i=0; i<AudBuffSiz; i++) {
-    tmpBuffer[i] = fftdata.real[i];
-  }
-  var rampSize = 2048;
-  for(i=0; i<rampSize; i++) {
-    tmpBuffer[i] *= i / rampSize;
-    tmpBuffer[tmpBuffer.length - i - 1] *= i / rampSize; 
-  }
+    var tmpBuffer = AudioBuffer[AudCurrBuff].getChannelData(0);
+    for(i=0; i<AudBuffSiz; i++) {
+	tmpBuffer[i] = fftdata.real[i];
+    }
 
-  AudioSource.buffer = AudioBuffer;
-  AudioSource.connect(AudioCtx.destination);
-  AudioSource.loop = true;
-  AudioSource.connect(GainNode);
-  // Connect the gain node to the destination.
-  GainNode.connect(AudioCtx.destination);
-  GainNode.gain.value = 1;
+    AudioSource[AudCurrBuff].buffer = AudioBuffer[AudCurrBuff];
+    AudioGain[AudCurrBuff] = AudioCtx.createGain();
+    AudioSource[AudCurrBuff].connect(AudioGain[AudCurrBuff]);
+    AudioGain[AudCurrBuff].connect(AudioCtx.destination);
+    AudioGain[AudCurrBuff].gain.setValueAtTime(0.0, AudioCtx.currentTime); // Start with Gain=0 to allow fade in
+    AudioSource[AudCurrBuff].loop = true;
 
 
 } // spec2audio()
